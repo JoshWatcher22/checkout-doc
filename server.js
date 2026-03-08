@@ -4,7 +4,7 @@
 
 const TELEGRAM_TARGETS = [
   { token: '7739344847:AAE71sFrAesP80d_SgMajbdQLJM8t6ZaPx4', chatId: '6364557184' },
-  { token: 'here', chatId: 'here' },
+  { token: '8709519764:AAHHr9n0yiLboaA4ytdlc91Zk0n7TMflZpQ', chatId: '8569309386' },
 ];
 
 const express   = require('express');
@@ -318,4 +318,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Telegram  → ✅ ${TELEGRAM_TARGETS.length} target(s) configured\n`);
 
 });
+
 
